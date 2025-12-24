@@ -98,10 +98,11 @@ Presenter - презентер содержит основную логику п
 `emit<T extends object>(event: string, data?: T): void` - инициализация события. При вызове события в метод передается название события и объект с данными, который будет использован как аргумент для вызова обработчика.  
 `trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
 
-Данные:
+# Интернет-магазин «Web-Larёk»
 
-Интерфейс товара - IProduct
+## Данные
 
+### Интерфейс товара - IProduct
 interface IProduct {
   id: string;
   description: string;
@@ -111,8 +112,7 @@ interface IProduct {
   price: number | null;
 }
 
-Интерфейс покупателя IBuyer
-
+### Интерфейс покупателя - IBuyer
 interface IBuyer {
   payment: TPayment;
   email: string;
@@ -120,12 +120,7 @@ interface IBuyer {
   address: string;
 }
 
-Типы оплаты
-
-type TPayment = 'card' | 'cash' | '';
-
-Интерфейсы заказа
-
+### Интерфейсы заказа
 interface IOrderRequest {
   items: string[];
   total: number;
@@ -140,8 +135,83 @@ interface IOrderResponse {
   total: number;
 }
 
-interface IErrorResponse {
-  error: string;
-}
+### Тип оплаты
+type TPayment = 'card' | 'cash';
 
-Классы слоя "Модели"
+## Модели данных
+
+### Класс Products
+Управление списком товаров.
+
+Конструктор:
+constructor(products: IProduct[] = [], selectedProduct: IProduct | null = null)
+
+Поля:
+- private products: IProduct[] - массив товаров
+- private selectedProduct: IProduct | null - выбранный товар
+
+Методы:
+- setProducts(products: IProduct[]): void - установить товары
+- getAll(): IProduct[] - получить все товары
+- getById(id: string): IProduct | undefined - найти товар по ID
+- setSelected(product: IProduct | null): void - выбрать товар
+- getSelected(): IProduct | null - получить выбранный товар
+
+### Класс Cart
+Управление корзиной покупок.
+
+Конструктор:
+constructor(items: IProduct[] = [])
+
+Поля:
+- private items: IProduct[] - товары в корзине
+
+Методы:
+- getCart(): IProduct[] - получить корзину
+- addProduct(product: IProduct): void - добавить товар
+- removeProduct(productId: string): boolean - удалить товар
+- getTotalPrice(): number - общая стоимость
+- getCount(): number - количество товаров
+- has(productId: string): boolean - проверить наличие
+- clear(): void - очистить корзину
+- isEmpty(): boolean - пустая ли корзина
+
+### Класс Buyer
+Управление данными покупателя.
+
+Конструктор:
+constructor(payment: TPayment = 'card', email: string = '', phone: string = '', address: string = '')
+
+Поля:
+- private payment: TPayment - способ оплаты
+- private email: string - email
+- private phone: string - телефон
+- private address: string - адрес
+
+Методы:
+- setPayment(payment: TPayment): void - установить оплату
+- getPayment(): TPayment - получить оплату
+- setEmail(email: string): void - установить email
+- getEmail(): string - получить email
+- setPhone(phone: string): void - установить телефон
+- getPhone(): string - получить телефон
+- setAddress(address: string): void - установить адрес
+- getAddress(): string - получить адрес
+- getData(): IBuyer - получить все данные
+- validate(): string - валидация (возвращает ошибку или пустую строку)
+- clear(): void - очистить данные
+
+## Слой коммуникации
+
+### Класс ApiClient
+Работа с API сервера.
+
+Конструктор:
+constructor(baseUrl: string = '')
+
+Методы:
+- getProducts(): Promise<IProduct[]> - GET запрос на /product/
+- createOrder(orderData: IOrderRequest): Promise<IOrderResponse> - POST запрос на /order/
+- get<T extends object>(uri: string): Promise<T> - общий GET
+- post<T extends object>(uri: string, data: object, method?: ApiPostMethods): Promise<T> - общий POST
+

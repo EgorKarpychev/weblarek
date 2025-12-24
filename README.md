@@ -99,3 +99,49 @@ Presenter - презентер содержит основную логику п
 `trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
 
 Данные:
+
+Интерфейс товара - IProduct
+
+interface IProduct {
+  id: string;
+  description: string;
+  image: string;
+  title: string;
+  category: string;
+  price: number | null;
+}
+
+Интерфейс покупателя IBuyer
+
+interface IBuyer {
+  payment: TPayment;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+Типы оплаты
+
+type TPayment = 'card' | 'cash' | '';
+
+Интерфейсы заказа
+
+interface IOrderRequest {
+  items: string[];
+  total: number;
+  payment: TPayment;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+interface IOrderResponse {
+  id: string;
+  total: number;
+}
+
+interface IErrorResponse {
+  error: string;
+}
+
+Классы слоя "Модели"

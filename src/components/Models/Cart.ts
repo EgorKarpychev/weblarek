@@ -1,10 +1,9 @@
 import { IProduct } from "../../types";
 
 export class Cart {
-    private items: IProduct[];
+    private items: IProduct[] = [];
 
-    constructor(items: IProduct[] = []) {
-        this.items = items;
+    constructor() {
     }
 
     getCart(): IProduct[] {
@@ -21,11 +20,8 @@ export class Cart {
         }
     }
 
-    removeProduct(productId: string): void {
-        const index = this.items.findIndex(item => item.id === productId)
-        if (index !== -1) {
-            this.items.splice(index, 1)
-        }
+    removeProduct(item: IProduct): void {
+        this.items = this.items.filter(i => i.id !== item.id)
     }
 
     clearCart(): void {

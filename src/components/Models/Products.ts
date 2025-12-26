@@ -1,12 +1,10 @@
 import { IProduct } from "../../types";
 
 export class Products {
-    private products: IProduct[];
-    private selectedProduct: IProduct | null;
+    private products: IProduct[] = [];
+    private selectedProduct: IProduct | null = null;
 
-    constructor (products: IProduct[] = [], selectedProduct: IProduct | null = null) {
-        this.products = products;
-        this.selectedProduct = selectedProduct
+    constructor () {
     }
 
     getAll(): IProduct[] {

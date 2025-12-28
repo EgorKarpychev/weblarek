@@ -51,7 +51,7 @@ export class Buyer {
     }
 
     clearData(): void {
-        this.payment = ''
+        this.payment = 'card'
         this.email = ''
         this.phone = ''
         this.address = ''

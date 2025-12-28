@@ -41,7 +41,9 @@ async function test() {
     const cart = new Cart();
     console.log('Создан экземпляр Cart');
 
-    console.log('Корзина до добавления товаров:', cart.getCart().length, 'товаров');
+    console.log('Корзина до добавления товаров:', cart.getTotalItems(), 'товаров');
+    console.log('Содержимое корзины:', cart.getCart());
+    console.log('Общая стоимость:', cart.getTotalPrice(), 'руб')
 
     const productsFromCatalog = productsModel.getAll();
     if (productsFromCatalog.length >= 3) {
@@ -51,13 +53,27 @@ async function test() {
         console.log('Добавлено 3 товара в корзину');
     }
 
-    console.log('Корзина после добавления товаров:', cart.getCart().length, 'товаров');
+    console.log('Корзина после добавления товаров:', cart.getTotalItems(), 'товаров');
+    console.log('Содержимое корзины:', cart.getCart())
     console.log('Общая стоимость:', cart.getTotalPrice(), 'руб.');
 
-    if (productsFromCatalog[0]) {
-        console.log(`\nПроверка наличия товара:`);
-        console.log('Товар в корзине?', cart.contains(productsFromCatalog[0].id));
-    }
+    console.log('\nПроверка наличия товара:');
+    console.log('Товар в корзине?', cart.contains(productsFromCatalog[0].id));
+
+    console.log('\nУдаляем товар из корзины:',productsFromCatalog[1]);
+    cart.removeProduct(productsFromCatalog[1]);
+    console.log('Корзина после удаления товара:', cart.getTotalItems(), 'товаров');
+    console.log('Содержимое корзины:', cart.getCart());
+    console.log('Общая стоимость:', cart.getTotalPrice(), 'руб');
+
+    console.log('\nПроверка наличия удаленного товара:');
+    console.log('Товар в корзине?', cart.contains(productsFromCatalog[1].id));
+
+    console.log('\nОчищаем корзину полностью:');
+    cart.clearCart();
+    console.log('Корзина после очистки:', cart.getTotalItems(), 'товаров');
+    console.log('СОдержимое корзины:', cart.getCart());
+    console.log('Общая стоимость:', cart.getTotalPrice(), 'руб');
 
     console.log('\n\n3. ТЕСТ КЛАССА Buyer:');
     console.log('----------------------');
@@ -112,7 +128,34 @@ async function test() {
         const productsFromServer = await apiClient.getProducts();
         console.log('GET запрос выполнен успешно!');
         console.log('Получено товаров с сервера:', productsFromServer.length);
-        
+
+        const productsModelFromServer = new Products();
+        console.log('Создан экземпляр Products')
+
+        productsModelFromServer.setProducts(productsFromServer);
+        console.log('\nМассив товаров с сервера сохранен в поле products')
+        console.log('Передано товаров:', productsFromServer.length)
+
+        const allProductsFromServer = productsModelFromServer.getAll();
+        console.log('\nПолучено значение поля products');
+        console.log('Полученный массив:', allProductsFromServer);
+
+        const testProductIdFromServer = allProductsFromServer[0].id;
+        const foundProductFromServer = productsModelFromServer.getById(testProductIdFromServer);
+        console.log('\nПоиск товара по ID');
+        console.log(`\nТовар по id "${testProductIdFromServer}":`, foundProductFromServer?.title);
+
+        console.log('Выбранный товар до выбора:', productsModelFromServer.getSelected()?.title || 'нет');
+
+    if (foundProductFromServer) {
+        productsModelFromServer.setSelected(foundProductFromServer);
+        console.log('Выбранный товар после выбора:', productsModelFromServer.getSelected()?.title);
+    }
+
+    // НЕМНОГО НЕ ПОНЯЛ, В КОММЕНТАРИИ СКАЗАНО, ЧТО НУЖНО ПРОТЕСТИРОВАТЬ
+    // МЕТОДЫ, КОТОРЫЙ РАБОТАЮТ НЕПОСРЕДСТВЕННО С МАССИВОМ Products?
+    // И НУЖНО ЛИ ДОБАВЛЯТЬ ЭТИ МЕТОДЫ?
+
     } catch (error) {
         console.error('Ошибка при выполнении GET запроса:', error);
     }

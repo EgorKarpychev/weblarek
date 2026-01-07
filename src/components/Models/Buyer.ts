@@ -1,4 +1,5 @@
 import { IBuyer, TPayment } from "../../types";
+import { IEvents } from "../base/Events";
 
 export class Buyer {
     private payment: TPayment = 'card';
@@ -6,11 +7,12 @@ export class Buyer {
     private phone: string = '';
     private address: string = '';
 
-    constructor() {
+    constructor(protected events: IEvents) {
     }
 
     setPayment(payment: TPayment): void {
         this.payment = payment
+        this.events.emit('buyer:change')
     }
 
     getPayment(): TPayment {
@@ -19,6 +21,7 @@ export class Buyer {
 
     setEmail(email: string): void {
         this.email = email
+        this.events.emit('buyer:change')
     }
 
     getEmail(): string {
@@ -27,6 +30,7 @@ export class Buyer {
 
     setPhone(phone: string): void {
         this.phone = phone
+        this.events.emit('buyer:change')
     }
 
     getPhone(): string {
@@ -35,6 +39,7 @@ export class Buyer {
 
     setAddress(address: string): void {
         this.address = address
+        this.events.emit('buyer:change')
     }
 
     getAddress(): string {
@@ -55,6 +60,7 @@ export class Buyer {
         this.email = ''
         this.phone = ''
         this.address = ''
+        this.events.emit('buyer:change')
     }
 
     validate(): string {

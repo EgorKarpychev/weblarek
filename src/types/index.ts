@@ -42,3 +42,7 @@ export interface ItemsRequest {
     total: number;
     items: IProduct[];
 }
+
+export interface ICardActions {
+    onClick: () => void;
+}

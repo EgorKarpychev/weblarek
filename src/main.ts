@@ -16,6 +16,7 @@ import { FormOrder } from './components/View/FormOrder';
 import { FormContacts } from './components/View/FormContact';
 import { Header } from './components/View/Header';
 import { categoryMap } from './utils/constants';
+import { SuccessView } from './components/View/Success';
 
 const events = new EventEmitter();
 
@@ -36,8 +37,9 @@ const basket = new Basket(cloneTemplate(basketTemplate), events);
 const orderTemplate = ensureElement<HTMLTemplateElement>('#order');
 const formOrder = new FormOrder(cloneTemplate(orderTemplate), events);
 const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
-const formContacts = new FormContacts(cloneTemplate(contactsTemplate), events);
+let formContacts = new FormContacts(cloneTemplate(contactsTemplate), events);
 const header = new Header(ensureElement('.header'), events);
+const success = new SuccessView(events);
 
 apiClient.getProducts()
     .then((data) => {
@@ -78,7 +80,6 @@ events.on('card:select', (data: { id: string }) => {
         const inCart = cart.getCart().some(item => item.id === productItem.id);
         
         cardPreview.productId = productItem.id;
-        
         cardPreview.cardTitle = productItem.title || 'Нет названия';
         cardPreview.cardPrice = productItem.price;
         
@@ -103,8 +104,7 @@ events.on('card:select', (data: { id: string }) => {
         }
         
         const previewElement = cardPreview.render();
-        
-        modal.render({ content: previewElement });
+        modal.modalContent = previewElement;
         modal.open();
     }
 });
@@ -152,8 +152,7 @@ events.on('cart:change', () => {
         items: cardBasketArr,
         totalPrice: cart.getTotalPrice()
     });
-    modal.render({ content: basketElement });
-    
+    modal.modalContent = basketElement;
 });
 
 events.on('basket:open', () => {
@@ -171,7 +170,7 @@ events.on('basket:open', () => {
         items: cardBasketArr,
     });
     
-    modal.render({ content: basketElement });
+    modal.modalContent = basketElement;
     modal.open();
 });
 
@@ -181,30 +180,39 @@ events.on('basket:order', () => {
     const formElement = formOrder.render({
         payment: buyer.getPayment(),
         address: buyer.getAddress(),
-        valid: buyer.validate() === '' && cart.getTotalItems() > 0
+        valid: false
     });
     
-    modal.render({ content: formElement });
+    modal.modalContent = formElement;
     modal.open();
 });
 
 events.on('order:next', () => {
-    const validation = buyer.validate();
-    const isValid = validation === '' && cart.getTotalItems() > 0;
+    const step1Valid = buyer.getPayment() && buyer.getAddress() && buyer.getAddress().trim().length >= 5;
     
-    if (isValid) {
+    if (step1Valid && cart.getTotalItems() > 0) {
         modal.close();
-        
-        const formElement = formContacts.render({
-            email: buyer.getEmail(),
-            phone: buyer.getPhone(),
-            valid: buyer.validate() === '' && cart.getTotalItems() > 0
+        const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
+        const contactsClone = cloneTemplate(contactsTemplate);
+            
+        const formContactsNew = new FormContacts(contactsClone, events);
+            
+        const formElement = formContactsNew.render({
+            email: buyer.getEmail() || '',
+            phone: buyer.getPhone() || '',
+            valid: false
         });
-        
-        modal.render({ content: formElement });
+            
+        modal.modalContent = formElement;
         modal.open();
+            
+        formContacts = formContactsNew;
     } else {
-        formOrder.error = validation;
+        if (!buyer.getPayment()) {
+            formOrder.error = 'Выберите способ оплаты';
+        } else if (!buyer.getAddress() || buyer.getAddress().trim().length < 5) {
+            formOrder.error = 'Введите адрес доставки';
+        }
     }
 });
 
@@ -229,11 +237,26 @@ events.on('order.phone:change', (data: { value: string }) => {
 });
 
 function updateValidation() {
-    const error = buyer.validate();
-    const valid = error === '' && cart.getTotalItems() > 0;
+    const modalContainer = document.querySelector('#modal-container');
+    if (!modalContainer) return;
     
-    formOrder.valid = valid;
-    formOrder.error = error;
+    const hasEmailField = modalContainer.querySelector('input[name="email"]') !== null;
+    const hasAddressField = modalContainer.querySelector('input[name="address"]') !== null;
+    
+    if (hasAddressField) {
+        const hasPayment = !!buyer.getPayment();
+        const hasAddress = !!(buyer.getAddress() && buyer.getAddress().trim().length >= 5);
+        const hasItems = cart.getTotalItems() > 0;
+        
+        formOrder.valid = hasPayment && hasAddress && hasItems;
+        formOrder.error = hasPayment && hasAddress ? '' : 'Заполните обязательные поля';
+    }
+    
+    if (hasEmailField) {
+        const error = buyer.validate();
+        formContacts.valid = error === '' && cart.getTotalItems() > 0;
+        formContacts.error = error;
+    }
 }
 
 events.on('order:submit', async () => {
@@ -250,14 +273,20 @@ events.on('order:submit', async () => {
         };
         
         try {
-            const result = await apiClient.createOrder(order);
+            await apiClient.createOrder(order);
             
-            
-            modal.close();
-            modal.open();
+            const orderTotal = cart.getTotalPrice();
             
             cart.clearCart();
             buyer.clearData();
+            header.basketCounter = 0;
+            
+            modal.close();
+            
+            success.setTotal(orderTotal);
+            const successElement = success.render();
+            modal.modalContent = successElement;
+            modal.open();
             
         } catch (error) {
             console.error('Ошибка оформления заказа:', error);

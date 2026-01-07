@@ -19,7 +19,6 @@ export class CardPreview extends Card<IProduct> {
         this.category = ensureElement<HTMLElement>('.card__category', this.container);
         
         this.button.addEventListener('click', () => {
-            console.log('Preview add clicked, productId:', this.container.dataset.id);
             events.emit('preview:add', { id: this.container.dataset.id });
         });
     }

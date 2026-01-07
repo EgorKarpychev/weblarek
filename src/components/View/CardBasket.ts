@@ -28,8 +28,6 @@ export class CardBasket extends Card<TCardBasket> {
     }
 
     render(data: TCardBasket & { id: string }): HTMLElement {
-        console.log('CardBasket render with:', data);
-        
         this.setIndex(data.index);
         
         if (data.title !== undefined) {

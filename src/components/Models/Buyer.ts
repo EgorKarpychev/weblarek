@@ -11,39 +11,39 @@ export class Buyer {
     }
 
     setPayment(payment: TPayment): void {
-        this.payment = payment
-        this.events.emit('buyer:change')
+        this.payment = payment;
+        this.events.emit('buyer:change', { field: 'payment' });
     }
 
     getPayment(): TPayment {
-        return this.payment
+        return this.payment;
     }
 
     setEmail(email: string): void {
-        this.email = email
-        this.events.emit('buyer:change')
+        this.email = email;
+        this.events.emit('buyer:change', { field: 'email' });
     }
 
     getEmail(): string {
-        return this.email
+        return this.email;
     }
 
     setPhone(phone: string): void {
-        this.phone = phone
-        this.events.emit('buyer:change')
+        this.phone = phone;
+        this.events.emit('buyer:change', { field: 'phone' });
     }
 
     getPhone(): string {
-        return this.phone
+        return this.phone;
     }
 
     setAddress(address: string): void {
-        this.address = address
-        this.events.emit('buyer:change')
+        this.address = address;
+        this.events.emit('buyer:change', { field: 'address' });
     }
 
     getAddress(): string {
-        return this.address
+        return this.address;
     }
 
     getData(): IBuyer {
@@ -52,29 +52,49 @@ export class Buyer {
             email: this.email,
             phone: this.phone,
             address: this.address
-        }
+        };
     }
 
     clearData(): void {
-        this.payment = 'card'
-        this.email = ''
-        this.phone = ''
-        this.address = ''
-        this.events.emit('buyer:change')
+        this.payment = 'card';
+        this.email = '';
+        this.phone = '';
+        this.address = '';
+        this.events.emit('buyer:change', { field: 'all' });
     }
 
     validate(): string {
         if (this.payment === '') {
-            return 'Выберите тип оплаты'
+            return 'Выберите тип оплаты';
         }
         if (this.email === '') {
-            return 'Укажите email'
+            return 'Укажите email';
         }
         if (this.phone === '') {
-            return 'Укажите номер телефона'
+            return 'Укажите номер телефона';
         }
         if (this.address === '') {
-            return 'Укажите адрес'
+            return 'Укажите адрес';
+        }
+        return '';
+    }
+
+    validateOrder(): string {
+        if (this.payment === '') {
+            return 'Выберите тип оплаты';
+        }
+        if (this.address === '') {
+            return 'Укажите адрес';
+        }
+        return '';
+    }
+
+    validateContacts(): string {
+        if (this.email === '') {
+            return 'Укажите email';
+        }
+        if (this.phone === '') {
+            return 'Укажите номер телефона';
         }
         return '';
     }

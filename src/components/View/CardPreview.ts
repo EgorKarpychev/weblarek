@@ -4,60 +4,67 @@ import { IEvents } from "../base/Events";
 import { IProduct } from "../../types";
 import { categoryMap, CDN_URL } from "../../utils/constants";
 
-export class CardPreview extends Card<IProduct> {
-    protected description: HTMLParagraphElement;
-    protected button: HTMLButtonElement;
-    protected image: HTMLImageElement;
-    protected category: HTMLElement;
+interface ICardPreviewData extends IProduct {
+    inCart: boolean;
+    isAvailable: boolean;
+    description: string;
+}
+
+export class CardPreview extends Card<ICardPreviewData> {
+    protected _description: HTMLParagraphElement;
+    protected _button: HTMLButtonElement;
+    protected _image: HTMLImageElement;
+    protected _category: HTMLElement;
 
     constructor(container: HTMLElement, protected events: IEvents) {
         super(container);
         
-        this.description = ensureElement<HTMLParagraphElement>('.card__text', this.container);
-        this.button = ensureElement<HTMLButtonElement>('.card__button', this.container);
-        this.image = ensureElement<HTMLImageElement>('.card__image', this.container);
-        this.category = ensureElement<HTMLElement>('.card__category', this.container);
+        this._description = ensureElement<HTMLParagraphElement>('.card__text', this.container);
+        this._button = ensureElement<HTMLButtonElement>('.card__button', this.container);
+        this._image = ensureElement<HTMLImageElement>('.card__image', this.container);
+        this._category = ensureElement<HTMLElement>('.card__category', this.container);
         
-        this.button.addEventListener('click', () => {
-            events.emit('preview:add', { id: this.container.dataset.id });
+        this._button.addEventListener('click', () => {
+            events.emit('preview:add');
         });
     }
+    
+    set category(value: string) {
+        this._category.textContent = value;
+        this._category.className = 'card__category';
+        const categoryClass = categoryMap[value as keyof typeof categoryMap];
 
-    set productId(value: string) {
-        this.container.dataset.id = value;
-    }
-
-    set buttonDisabled(value: boolean) {
-        this.button.disabled = value;
-    }
-
-    set buttonText(value: string) {
-        this.button.textContent = value;
-    }
-
-    setCategory(value: string, className?: string) {
-        this.category.textContent = value;
-        let categoryClass: string;
-        
-        if (className) {
-            categoryClass = className;
-        } else {
-            categoryClass = (categoryMap as Record<string, string>)[value] || 'other';
+        if (categoryClass) {
+            this._category.classList.add(categoryClass);
         }
-        
-        this.category.className = `card__category card__category_${categoryClass}`;
+    }
+    
+    set image(value: string) {
+        if (value && this._image) {
+            this._image.src = CDN_URL + value;
+            this._image.alt = this._title?.textContent || 'Изображение товара';
+        }
+    }
+    
+    set buttonText(value: string) {
+        this._button.textContent = value;
+    }
+    
+    set buttonDisabled(value: boolean) {
+        this._button.disabled = value;
     }
 
-    setUpImage(url: string, alt: string) {
-        this.image.src = CDN_URL + url;
-        this.image.alt = alt;
+    set inCart(value: boolean) {
+        if (this._button) {
+            this._button.textContent = value ? 'Удалить из корзины' : 'В корзину';
+            this._button.disabled = false;
+        }
     }
-
-    setDescription(value: string) {
-        this.description.textContent = value;
-    }
-
-    render(): HTMLElement {
-        return this.container;
+    
+    set isAvailable(value: boolean) {
+        if (!value && this._button) {
+            this._button.textContent = 'Недоступно';
+            this._button.disabled = true;
+        }
     }
 }

@@ -9,37 +9,22 @@ type TCardBasket = {
 }
 
 export class CardBasket extends Card<TCardBasket> {
-    protected index: HTMLElement;
+    protected _index: HTMLElement;
     protected deleteButton: HTMLButtonElement;
 
-    constructor(container: HTMLElement, protected events: IEvents) {
+    constructor(container: HTMLElement, protected events: IEvents, private onDeleteClick: () => void) {
         super(container);
         
-        this.index = ensureElement<HTMLElement>('.basket__item-index', this.container);
+        this._index = ensureElement<HTMLElement>('.basket__item-index', this.container,);
         this.deleteButton = ensureElement<HTMLButtonElement>('.basket__item-delete', this.container);
         
-        this.deleteButton.addEventListener('click', () => {
-            events.emit('basket:remove', { id: this.container.dataset.id });
+        this.deleteButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.onDeleteClick();
         });
     }
 
-    setIndex(value: number) {
-        this.index.textContent = String(value);
-    }
-
-    render(data: TCardBasket & { id: string }): HTMLElement {
-        this.setIndex(data.index);
-        
-        if (data.title !== undefined) {
-            this.cardTitle = data.title;
-        }
-        
-        if (data.price !== undefined) {
-            this.cardPrice = data.price;
-        }
-        
-        this.container.dataset.id = data.id;
-        
-        return this.container;
+    set index(value: number) {
+        this._index.textContent = String(value);
     }
 }

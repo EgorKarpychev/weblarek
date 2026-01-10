@@ -59,12 +59,14 @@ apiClient.getProducts()
 events.on('products:changed', () => {
     const allProducts = products.getAll();
     const itemCards = allProducts.map((item) => {
-        const card = new CardCatalog(cloneTemplate(cardCatalogTemplate), events, item.id);
+        const card = new CardCatalog(cloneTemplate(cardCatalogTemplate), events, () => {
+                events.emit('card:select', { id: item.id });
+            });
         
         return card.render(item);
     });
 
-    gallery.catalog = itemCards;
+    gallery.render({ catalog: itemCards });
 });
 
 events.on('card:select', (data: { id: string }) => {
@@ -78,38 +80,47 @@ events.on('products:changeSelected', () => {
     const productItem = products.getSelected();
     if (!productItem) return;
     
-    const cardPreview = new CardPreview(cloneTemplate(cardPreviewTemplate), events);
+    const cardPreview = new CardPreview(cloneTemplate(cardPreviewTemplate), events, () => {
+        if (productItem.price !== null) {
+                if (cart.contains(productItem.id)) {
+                    cart.removeProduct(productItem);
+                } else {
+                    cart.addProduct(productItem);
+                }
+                header.basketCounter = cart.getTotalItems();
+                modal.close();
+            }
+    });
     
     const inCart = cart.contains(productItem.id);
     const isAvailable = productItem.price !== null;
+
+    let buttonText: string;
+    let buttonDisabled: boolean;
+    
+    if (!isAvailable) {
+        buttonText = 'Недоступно';
+        buttonDisabled = true;
+    } else if (inCart) {
+        buttonText = 'Удалить из корзины';
+        buttonDisabled = false;
+    } else {
+        buttonText = 'В корзину';
+        buttonDisabled = false;
+    }
     
     const previewElement = cardPreview.render({
-        id: productItem.id,
         title: productItem.title,
         price: productItem.price,
         category: productItem.category,
         image: productItem.image,
         description: productItem.description || '',
-        inCart: inCart,
-        isAvailable: isAvailable
+        buttonText: buttonText,
+        buttonDisabled: buttonDisabled
     });
     
-    modal.modalContent = previewElement;
+    modal.render({ content: previewElement })
     modal.open();
-});
-
-events.on('preview:add', () => {
-    const productItem = products.getSelected();
-    
-    if (productItem && productItem.price !== null) {
-        if (cart.contains(productItem.id)) {
-            cart.removeProduct(productItem);
-        } else {
-            cart.addProduct(productItem);
-        }
-        header.basketCounter = cart.getTotalItems();
-        modal.close();
-    } 
 });
 
 events.on('basket:remove', (data: { id: string }) => {
@@ -119,7 +130,7 @@ events.on('basket:remove', (data: { id: string }) => {
     }
 });
 
-events.on('buyer:change', (data: { field: string }) => {
+events.on('buyer:change', () => {
     const modalContainer = document.querySelector('#modal-container');
     if (!modalContainer) return;
     
@@ -127,70 +138,30 @@ events.on('buyer:change', (data: { field: string }) => {
     const hasAddressField = modalContainer.querySelector('input[name="address"]') !== null;
     const hasItems = cart.getTotalItems() > 0;
     
-    if (data.field === 'all') {
-        if (hasAddressField) {
-            const orderError = buyer.validateOrder();
-            const isOrderValid = orderError === '' && hasItems;
-            
-            formOrder.render({
-                payment: buyer.getPayment(),
-                address: buyer.getAddress(),
-                valid: isOrderValid
-            });
-            if (buyer.getPayment() === '' && buyer.getAddress() === '') {
-                formOrder.error = '';
-            } else {
-                formOrder.error = orderError || '';
-            }
-        }
+    if (hasAddressField) {
+        const orderError = buyer.validateOrder();
+        const isOrderValid = orderError === '' && hasItems;
         
-        if (hasEmailField) {
-            const contactsError = buyer.validateContacts();
-            const isContactsValid = contactsError === '' && hasItems;
-            
-            formContacts.render({
-                email: buyer.getEmail(),
-                phone: buyer.getPhone(),
-                valid: isContactsValid
-            });
-            if (buyer.getEmail() === '' && buyer.getPhone() === '') {
-                formContacts.error = '';
-            } else {
-                formContacts.error = contactsError || '';
-            }
-        }
-    } else {
-        if (hasAddressField) {
-            const orderError = buyer.validateOrder();
-            const isOrderValid = orderError === '' && hasItems;
-            
-            formOrder.render({
-                payment: buyer.getPayment(),
-                address: buyer.getAddress(),
-                valid: isOrderValid
-            });
-            
-            if ((data.field === 'payment' && buyer.getPayment() !== '') || 
-                (data.field === 'address' && buyer.getAddress() !== '')) {
-                formOrder.error = orderError;
-            }
-        }
+        formOrder.render({
+            payment: buyer.getPayment(),
+            address: buyer.getAddress(),
+            valid: isOrderValid
+        });
         
-        if (hasEmailField) {
-            const contactsError = buyer.validateContacts();
-            const isContactsValid = contactsError === '' && hasItems;
-            
-            formContacts.render({
-                email: buyer.getEmail(),
-                phone: buyer.getPhone(),
-                valid: isContactsValid
-            });
-            
-            if ((data.field === 'email' && buyer.getEmail() !== '') || 
-                (data.field === 'phone' && buyer.getPhone() !== '')) {
-                formContacts.error = contactsError;
-            }
-        }
+        formOrder.error = orderError;
+    }
+    
+    if (hasEmailField) {
+        const contactsError = buyer.validateContacts();
+        const isContactsValid = contactsError === '' && hasItems;
+        
+        formContacts.render({
+            email: buyer.getEmail(),
+            phone: buyer.getPhone(),
+            valid: isContactsValid
+        });
+        
+        formContacts.error = contactsError;
     }
 });
 
@@ -254,79 +225,42 @@ events.on('basket:order', () => {
         valid: isValid
     });
     
-    if (orderError && (buyer.getPayment() !== '' || buyer.getAddress() !== '')) {
-        formOrder.error = orderError;
-    } else {
-        formOrder.error = '';
-    }
+    formOrder.error = orderError;
     
     modal.modalContent = formElement;
     modal.open();
 });
 
 events.on('order:next', () => {
-    const step1Valid = buyer.validateOrder() === '';
+    const orderError = buyer.validateOrder();
     const hasItems = cart.getTotalItems() > 0;
+    const isOrderValid = orderError === '' && hasItems;
     
-    if (step1Valid && hasItems) {
+    if (isOrderValid) {
         modal.close();
+        const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
+        const contactsClone = cloneTemplate(contactsTemplate);
+            
+        const formContactsNew = new FormContacts(contactsClone, events);
+            
+        const contactsError = buyer.validateContacts();
+        const isContactsValid = contactsError === '' && hasItems;
+            
+        const formElement = formContactsNew.render({
+            email: buyer.getEmail(),
+            phone: buyer.getPhone(),
+            valid: isContactsValid
+        });
+            
+        formContactsNew.error = contactsError;
+           
+        modal.render({ content: formElement })
+        modal.open();
+            
+        formContacts = formContactsNew;
         
-        setTimeout(() => {
-            const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
-            const contactsClone = cloneTemplate(contactsTemplate);
-            
-            const formContactsNew = new FormContacts(contactsClone, events);
-            
-            const contactsError = buyer.validateContacts();
-            const isContactsValid = contactsError === '' && hasItems;
-            
-            const formElement = formContactsNew.render({
-                email: buyer.getEmail(),
-                phone: buyer.getPhone(),
-                valid: isContactsValid
-            });
-        
-            if (contactsError && (buyer.getEmail() !== '' || buyer.getPhone() !== '')) {
-                formContactsNew.error = contactsError;
-            }
-            
-            modal.modalContent = formElement;
-            modal.open();
-            
-            formContacts = formContactsNew;
-        }, 300);
     } else {
-        const error = buyer.validateOrder();
-        formOrder.error = error || 'Добавьте товары в корзину';
-    }
-});
-
-events.on('order:next', () => {
-    const step1Valid = buyer.validateOrder() === '';
-    
-    if (step1Valid && cart.getTotalItems() > 0) {
-        modal.close();
-        
-        setTimeout(() => {
-            const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
-            const contactsClone = cloneTemplate(contactsTemplate);
-            
-            const formContactsNew = new FormContacts(contactsClone, events);
-            
-            const formElement = formContactsNew.render({
-                email: buyer.getEmail(),
-                phone: buyer.getPhone(),
-                valid: buyer.validateContacts() === '' && cart.getTotalItems() > 0
-            });
-            
-            modal.modalContent = formElement;
-            modal.open();
-            
-            formContacts = formContactsNew;
-        }, 300);
-    } else {
-        const error = buyer.validateOrder();
-        formOrder.error = error;
+        formOrder.error = orderError;
     }
 });
 
@@ -347,7 +281,9 @@ events.on('order.phone:change', (data: { value: string }) => {
 });
 
 events.on('order:submit', async () => {
-    const validation = buyer.validate();
+    const orderError = buyer.validateOrder();
+    const contactsError = buyer.validateContacts();
+    const validation = orderError || contactsError;
     
     if (validation === '' && cart.getTotalItems() > 0) {
         const order = {
@@ -371,7 +307,7 @@ events.on('order:submit', async () => {
             modal.close();
             
             success.total = orderTotal;
-            const successElement = success.render();
+            const successElement = success.render({ total: orderTotal });
             modal.modalContent = successElement;
             modal.open();
             
@@ -380,7 +316,7 @@ events.on('order:submit', async () => {
             formContacts.error = 'Ошибка оформления заказа. Попробуйте снова.';
         }
     } else {
-        formContacts.error = validation;
+        formContacts.error = validation || 'Добавьте товары в корзину';
     }
 });
 

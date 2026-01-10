@@ -5,9 +5,9 @@ import { IProduct } from "../../types";
 import { categoryMap, CDN_URL } from "../../utils/constants";
 
 interface ICardPreviewData extends IProduct {
-    inCart: boolean;
-    isAvailable: boolean;
     description: string;
+    buttonText: string;
+    buttonDisabled: boolean;
 }
 
 export class CardPreview extends Card<ICardPreviewData> {
@@ -15,17 +15,20 @@ export class CardPreview extends Card<ICardPreviewData> {
     protected _button: HTMLButtonElement;
     protected _image: HTMLImageElement;
     protected _category: HTMLElement;
+    private _onButtonClick: () => void;
 
-    constructor(container: HTMLElement, protected events: IEvents) {
+    constructor(container: HTMLElement, protected events: IEvents, onButtonClick: () => void) {
         super(container);
         
         this._description = ensureElement<HTMLParagraphElement>('.card__text', this.container);
         this._button = ensureElement<HTMLButtonElement>('.card__button', this.container);
         this._image = ensureElement<HTMLImageElement>('.card__image', this.container);
         this._category = ensureElement<HTMLElement>('.card__category', this.container);
-        
-        this._button.addEventListener('click', () => {
-            events.emit('preview:add');
+        this._onButtonClick = onButtonClick;
+
+        this._button.addEventListener('click', (e) => {
+            e.preventDefault();
+            this._onButtonClick(); 
         });
     }
     
@@ -52,19 +55,5 @@ export class CardPreview extends Card<ICardPreviewData> {
     
     set buttonDisabled(value: boolean) {
         this._button.disabled = value;
-    }
-
-    set inCart(value: boolean) {
-        if (this._button) {
-            this._button.textContent = value ? 'Удалить из корзины' : 'В корзину';
-            this._button.disabled = false;
-        }
-    }
-    
-    set isAvailable(value: boolean) {
-        if (!value && this._button) {
-            this._button.textContent = 'Недоступно';
-            this._button.disabled = true;
-        }
     }
 }

@@ -227,8 +227,8 @@ constructor(baseUrl: string = '')
 - `container: HTMLElement` - корневой DOM элемент компонента
 
 **Методы:**
-- `render(data?: Partial<T>): HTMLElement` - основной метод рендеринга, принимает данные и возвращает DOM элемент
-- `toggleClass(element: HTMLElement, className: string, force?: boolean): void` - утилита для управления CSS классами
+- `render(data?: Partial<T>): HTMLElement` - основной метод рендеринга, устанавливает свойства через сеттеры
+- `protected ensureElement<K extends HTMLElement>(selector: string): K` - защищенный метод поиска элемента
 
 ### Класс Card
 Абстрактный базовый класс для всех карточек товаров. Наследуется от `Component`.
@@ -237,13 +237,12 @@ constructor(baseUrl: string = '')
 `constructor(container: HTMLElement)`
 
 **Поля:**
-- `protected title: HTMLElement` - элемент для отображения названия товара
-- `protected price: HTMLElement` - элемент для отображения цены товара
+- `protected _title: HTMLElement` - элемент для отображения названия товара
+- `protected _price: HTMLElement` - элемент для отображения цены товара
 
 **Методы:**
 - `set title(value: string)` - сеттер для установки названия товара
 - `set price(value: number | null)` - сеттер для установки цены товара
-- `protected setImage(element: HTMLImageElement, src: string): void` - защищенный метод для установки изображения
 
 ## Классы представления карточек товаров
 
@@ -251,17 +250,16 @@ constructor(baseUrl: string = '')
 Отвечает за отображение карточки товара в каталоге. Наследуется от `Card`.
 
 **Конструктор:**
-`constructor(container: HTMLElement, protected events: IEvents)`
+`constructor(container: HTMLElement, protected events: IEvents, onClick: () => void)`
 
 **Поля:**
-- `protected image: HTMLImageElement` - элемент изображения товара
-- `protected button: HTMLButtonElement` - кнопка "Купить"
+- `protected _category: HTMLElement` - элемент категории товара
+- `protected _image: HTMLImageElement` - элемент изображения товара
+- `private _onClick: () => void` - обработчик клика на карточку
 
 **Методы:**
-- `render(item: IProduct): HTMLElement` - рендерит карточку товара в каталоге
-- Генерирует события:
-  - `'catalog:add'` - при клике на кнопку "Купить"
-  - `'card:select'` - при клике на карточку (кроме кнопки)
+- `set category(value: string)` - устанавливает категорию
+- `set image(value: string)` - устанавливает изображение товара
 
 ### Класс CardPreview
 Отвечает за отображение детальной карточки товара в модальном окне. Наследуется от `Card`.
@@ -270,53 +268,36 @@ constructor(baseUrl: string = '')
 `constructor(container: HTMLElement, protected events: IEvents)`
 
 **Поля:**
-- `protected description: HTMLParagraphElement` - элемент описания товара
-- `protected category: HTMLElement` - элемент категории товара
-- `protected image: HTMLImageElement` - элемент изображения товара
-- `protected button: HTMLButtonElement` - кнопка действия
+- `protected _description: HTMLParagraphElement` - элемент описания товара
+- `protected _category: HTMLElement` - элемент категории товара
+- `protected _image: HTMLImageElement` - элемент изображения товара
+- `protected _button: HTMLButtonElement` - кнопка действия
 
 **Методы:**
-- `render(data: IProduct & { inCart?: boolean }): HTMLElement` - рендерит детальную карточку товара
-- `setCategory(value: string, className?: string): void` - устанавливает категорию с CSS классом
-- `setUpImage(url: string, alt: string): void` - устанавливает изображение товара
-- Генерирует события:
-  - `'preview:add'` - при клике на кнопку в превью
+- `set description(value: string)` - устанавливает описание товара
+- `set category(value: string)` - устанавливает категорию 
+- `set image(value: string)` - устанавливает изображение товара
+- `set buttonText(value: string)` - устанавливает текст кнопки
+- `set buttonDisabled(value: boolean)` - устанавливает состояние кнопки
 
 ### Класс CardBasket
 Отвечает за отображение карточки товара в корзине. Наследуется от `Card`.
 
 **Конструктор:**
-`constructor(container: HTMLElement, protected events: IEvents)`
+`constructor(container: HTMLElement, protected events: IEvents, onDeleteClick: () => void)`
 
 **Поля:**
-- `protected index: HTMLElement` - элемент порядкового номера
-- `protected deleteButton: HTMLButtonElement` - кнопка удаления
+- `protected _index: HTMLElement` - элемент порядкового номера
+- `protected _deleteButton: HTMLButtonElement` - кнопка удаления
+- `private _onDeleteClick: () => void` - обработчик клика на кнопку удаления
 
 **Методы:**
-- `render(data: { index: number } & IProduct): HTMLElement` - рендерит карточку товара в корзине
-- `set cardIndex(value: number)` - устанавливает порядковый номер
-- Генерирует события:
-  - `'basket:remove'` - при клике на кнопку удаления
+- `set index(value: number)` - устанавливает порядковый номер
 
 ## Классы представления форм
 
-### Базовый класс Form
-Абстрактный базовый класс для всех форм. Наследуется от `Component`.
-
-**Конструктор:**
-`constructor(container: HTMLElement, protected events: IEvents)`
-
-**Поля:**
-- `protected submitButton: HTMLButtonElement` - кнопка отправки формы
-- `protected errors: HTMLElement` - элемент отображения ошибок
-
-**Методы:**
-- `set valid(value: boolean)` - активирует/деактивирует кнопку отправки
-- `set error(value: string)` - отображает ошибку валидации
-- `protected findInput(name: string): HTMLInputElement` - защищенный метод поиска поля ввода
-
 ### Класс FormOrder
-Отвечает за отображение формы заказа (выбор оплаты и адреса). Наследуется от `Form`.
+Отвечает за отображение формы заказа (выбор оплаты и адреса).
 
 **Конструктор:**
 `constructor(container: HTMLElement, events: IEvents)`
@@ -324,16 +305,17 @@ constructor(baseUrl: string = '')
 **Поля:**
 - `protected paymentButtons: NodeListOf<HTMLButtonElement>` - кнопки выбора способа оплаты
 - `protected addressInput: HTMLInputElement` - поле ввода адреса
+- `protected submitButton: HTMLButtonElement;` - кнопка подтверждения
+- `protected errors: HTMLElement;` - вывод ошибок
 
 **Методы:**
-- `render(data?: { payment: TPayment, address: string, valid: boolean }): HTMLElement` - рендерит форму заказа
-- Генерирует события:
-  - `'payment:change'` - при изменении способа оплаты
-  - `'order.address:change'` - при изменении адреса
-  - `'order:next'` - при отправке формы
+- `set payment(value: string)` - устанавливает выбранный способ оплаты
+- `set address(value: string)` - устанавливает адрес доставки
+- `set valid(value: boolean)` - устанавливает состояние кнопки отправки
+- `set error(value: string)` - устанавливает текст ошибки валидации
 
 ### Класс FormContacts
-Отвечает за отображение формы контактов (email и телефон). Наследуется от `Form`.
+Отвечает за отображение формы контактов (email и телефон). 
 
 **Конструктор:**
 `constructor(container: HTMLElement, events: IEvents)`
@@ -341,18 +323,19 @@ constructor(baseUrl: string = '')
 **Поля:**
 - `protected emailInput: HTMLInputElement` - поле ввода email
 - `protected phoneInput: HTMLInputElement` - поле ввода телефона
+- `protected submitButton: HTMLButtonElement;` - кнопка подтверждения
+- `protected errors: HTMLElement;` - вывод ошибок
 
 **Методы:**
-- `render(data?: { email: string, phone: string, valid: boolean }): HTMLElement` - рендерит форму контактов
-- Генерирует события:
-  - `'order.email:change'` - при изменении email
-  - `'order.phone:change'` - при изменении телефона
-  - `'order:submit'` - при отправке формы
+- `set email(value: string)` - устанавливает email
+- `set phone(value: string)` - устанавливает телефон
+- `set valid(value: boolean)` - устанавливает состояние кнопки отправки
+- `set error(value: string)` - устанавливает текст ошибки валидации
 
 ## Прочие классы представления
 
 ### Класс Modal
-Управляет модальным окном. Не наследуется и не имеет потомков.
+Управляет модальным окном.
 
 **Конструктор:**
 `constructor(protected container: HTMLElement, protected events: IEvents)`
@@ -362,11 +345,10 @@ constructor(baseUrl: string = '')
 - `protected content: HTMLElement` - контейнер для контента
 
 **Методы:**
+- `set content(value: HTMLElement)` - устанавливает контент модального окна
+- `render(data?: Partial<IModalData>): HTMLElement` - переопределенный метод рендеринга, автоматически вызывает open()
 - `open(): void` - открывает модальное окно
 - `close(): void` - закрывает модальное окно
-- `set modalContent(value: HTMLElement)` - устанавливает контент модального окна
-- Генерирует события:
-  - `'modal:close'` - при закрытии модалки
 
 ### Класс Basket
 Отвечает за отображение корзины товаров.
@@ -380,9 +362,8 @@ constructor(baseUrl: string = '')
 - `protected button: HTMLButtonElement` - кнопка оформления заказа
 
 **Методы:**
-- `render(data: { items: HTMLElement[], totalPrice: number }): HTMLElement` - рендерит корзину
-- Генерирует события:
-  - `'basket:order'` - при клике на кнопку оформления заказа
+- `set items(items: HTMLElement[])` - устанавливает список товаров
+- `set totalPrice(value: number)` - устанавливает общую стоимость
 
 ### Класс Header
 Отвечает за отображение шапки сайта.
@@ -396,15 +377,31 @@ constructor(baseUrl: string = '')
 
 **Методы:**
 - `set basketCounter(value: number)` - обновляет счетчик корзины
-- Генерирует события:
-  - `'basket:open'` - при клике на кнопку корзины
+
+### Класс Gallery
+Отвечает за отображение галереи товаров.
+
+**Конструктор:**
+`constructor(container: HTMLElement, protected events: IEvents)`
+
+**Сеттеры:**
+- `set catalog(items: HTMLElement[])` - устанавливает каталог товаров
+
+### Класс Success
+Отвечает за отображение успешного оформления заказа.
+
+**Конструктор:**
+`constructor(container: HTMLElement, private events: IEvents)`
+
+**Сеттеры:**
+- `set total(value: number)` - устанавливает сумму заказа
 
 # События приложения
 
 ## События каталога товаров
 
 ### `'products:changed'`
-**Генерируется:** В `main.ts` после загрузки товаров с сервера
+**Генерируется:** В `Products` после загрузки/изменения товаров
 **Данные:** Отсутствуют
 **Описание:** Сигнализирует об изменении списка товаров. Инициирует перерисовку каталога.
 
@@ -413,17 +410,10 @@ constructor(baseUrl: string = '')
 **Данные:** `{ id: string }` - ID выбранного товара
 **Описание:** Открывает модальное окно с детальной информацией о товаре.
 
-### `'catalog:add'`
-**Генерируется:** В `CardCatalog` при клике на кнопку "Купить" в каталоге
-**Данные:** `{ id: string }` - ID добавляемого товара
-**Описание:** Добавляет товар в корзину и обновляет состояние кнопки.
-
-## События модального окна превью
-
-### `'preview:add'`
-**Генерируется:** В `CardPreview` при клике на кнопку "Купить" в модальном окне
-**Данные:** `{ id: string }` - ID добавляемого товара
-**Описание:** Добавляет товар в корзину и закрывает модальное окно.
+### `'products:changeSelected'`
+**Генерируется:** В `Products.setSelected()`
+**Данные:** Отсутствуют
+**Описание:** Открывает модальное окно с детальной информацией о выбранном товаре
 
 ## События корзины
 
@@ -440,7 +430,7 @@ constructor(baseUrl: string = '')
 ### `'basket:order'`
 **Генерируется:** В `Basket` при клике на кнопку оформления заказа
 **Данные:** Отсутствуют
-**Описание:** Открывает форму для оформления заказа (шаг 1 - оплата и адрес).
+**Описание:** Открывает форму для оформления заказа.
 
 ## События форм заказа
 
@@ -474,6 +464,13 @@ constructor(baseUrl: string = '')
 **Данные:** Отсутствуют
 **Описание:** Отправляет данные заказа на сервер, очищает корзину и показывает сообщение об успехе.
 
+## События покупателя
+
+### `'buyer:change'`
+**Генерируется:** В `Buyer` при любом изменении данных
+**Данные:** `{ field: string }` - измененное поле
+**Описание:** Обновляет валидацию форм
+
 ## События модального окна
 
 ### `'modal:close'`
@@ -497,7 +494,6 @@ constructor(baseUrl: string = '')
 
 1. **Просмотр каталога:**
    - `card:select` → открытие превью товара
-   - `catalog:add` → добавление в корзину из каталога
 
 2. **Работа с корзиной:**
    - `basket:open` → открытие корзины

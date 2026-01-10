@@ -2,7 +2,7 @@ import { Component } from "../base/Component";
 import { IEvents } from "../base/Events";
 
 interface IGallery {
-    items: HTMLElement[];
+    catalog: HTMLElement[];
 }
 
 export class Gallery extends Component<IGallery> {

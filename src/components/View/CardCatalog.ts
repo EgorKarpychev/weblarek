@@ -11,16 +11,18 @@ export class CardCatalog extends Card<{
 }> {
     protected _category: HTMLElement;
     protected _image: HTMLImageElement;
+    private _onClick: () => void;
 
-    constructor(container: HTMLElement, protected events: IEvents, private itemId: string) {
+    constructor(container: HTMLElement, protected events: IEvents, onClick: () => void) {
         super(container);
         
         this._category = ensureElement<HTMLElement>('.card__category', this.container);
         this._image = ensureElement<HTMLImageElement>('.card__image', this.container);
+        this._onClick = onClick;
         
         this.container.addEventListener('click', (e) => {
             if (!(e.target as HTMLElement).closest('.card__button')) {
-                events.emit('card:select', { id: this.itemId });
+                this._onClick();
             }
         });
     }

@@ -78,27 +78,8 @@ export class Buyer {
             return 'Укажите email';
         }
 
-        const trimmedEmail = this.email.trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailRegex.test(trimmedEmail)) {
-            return 'Введите корректный email (user@example.com)';
-        }
-
         if (this.phone === '') {
             return 'Укажите номер телефона';
-        }
-
-        const trimmedPhone = this.phone.trim();
-        const phoneDigits = trimmedPhone.replace(/\D/g, '');
-    
-        if (phoneDigits.length < 10) {
-            return 'Номер телефона должен содержать не менее 10 цифр';
-        }
-
-        const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-        if (!phoneRegex.test(trimmedPhone)) {
-            return 'Укажите корректный номер телефона';
         }
 
         return '';

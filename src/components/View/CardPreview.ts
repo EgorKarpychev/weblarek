@@ -48,6 +48,10 @@ export class CardPreview extends Card<ICardPreviewData> {
             this._image.alt = this._title?.textContent || 'Изображение товара';
         }
     }
+
+    set description(value: string) {
+        this._description.textContent = value
+    }
     
     set buttonText(value: string) {
         this._button.textContent = value;

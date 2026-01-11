@@ -20,10 +20,9 @@ export class CardCatalog extends Card<{
         this._image = ensureElement<HTMLImageElement>('.card__image', this.container);
         this._onClick = onClick;
         
-        this.container.addEventListener('click', (e) => {
-            if (!(e.target as HTMLElement).closest('.card__button')) {
-                this._onClick();
-            }
+        this.container.addEventListener('click', () => {
+            this._onClick();
+            
         });
     }
 
